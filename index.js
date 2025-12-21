@@ -58,6 +58,20 @@ async function run() {
     };
 
     app.delete('/habits/:id', deleteHabit);
+
+    // PUT endpoint to update a habit by id
+    const updateHabitDetails = async(req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: data
+      };
+      const result = await habits.updateOne(filter, updatedDoc);
+      res.send(result);
+    };
+
+    app.put('/habits/:id', updateHabitDetails);
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
