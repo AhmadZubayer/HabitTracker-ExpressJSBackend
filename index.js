@@ -59,6 +59,25 @@ async function run() {
 
     app.delete('/habits/:id', deleteHabit);
 
+    // GET endpoint to fetch a single habit by id
+    const habitDetails = async(req, res) => {
+      try {
+        const id = req.params.id;
+        const habit = await habits.findOne({ _id: new ObjectId(id) });
+        
+        if (!habit) {
+          return res.status(404).send({ message: 'Habit not found' });
+        }
+        
+        res.send(habit);
+      } catch (error) {
+        console.error('Error fetching habit:', error);
+        res.status(500).send({ message: 'Failed to fetch habit' });
+      }
+    };
+
+    app.get('/habits/:id', habitDetails);
+
     // PUT endpoint to update a habit by id
     const updateHabitDetails = async(req, res) => {
       const id = req.params.id;
