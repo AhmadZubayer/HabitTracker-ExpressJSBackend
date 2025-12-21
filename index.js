@@ -91,6 +91,80 @@ async function run() {
     };
 
     app.put('/habits/:id', updateHabitDetails);
+
+    // POST endpoint to mark habit as complete
+    const markHabitComplete = async(req, res) => {
+      try {
+        const id = req.params.id;
+        const { date } = req.body;
+        
+        // Get the current habit
+        const habit = await habits.findOne({ _id: new ObjectId(id) });
+        
+        if (!habit) {
+          return res.status(404).send({ message: 'Habit not found' });
+        }
+        
+        // Initialize completionHistory if it doesn't exist
+        const completionHistory = habit.completionHistory || [];
+        
+        // Check if already completed for this date
+        if (completionHistory.includes(date)) {
+          return res.status(400).send({ message: 'Already completed for this date' });
+        }
+        
+        // Add the new date to completion history
+        completionHistory.push(date);
+        
+        // Calculate new streak
+        const calculateStreak = (completionHistory) => {
+          if (!completionHistory || completionHistory.length === 0) return 0;
+          
+          const sortedDates = completionHistory.sort((a, b) => new Date(b) - new Date(a));
+          let streak = 0;
+          
+          for (let i = 0; i < sortedDates.length; i++) {
+            const expectedDate = new Date();
+            expectedDate.setDate(expectedDate.getDate() - i);
+            const expectedDateStr = expectedDate.toISOString().split('T')[0];
+            
+            if (sortedDates[i] === expectedDateStr) {
+              streak++;
+            } else {
+              break;
+            }
+          }
+          
+          return streak;
+        };
+        
+        const newStreak = calculateStreak(completionHistory);
+        
+        // Update the habit with new completion history and streak
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            completionHistory: completionHistory,
+            currentStreak: newStreak
+          }
+        };
+        
+        const result = await habits.updateOne(filter, updatedDoc);
+        
+        res.send({ 
+          success: true, 
+          message: 'Habit marked as complete',
+          completionHistory,
+          currentStreak: newStreak,
+          result 
+        });
+      } catch (error) {
+        console.error('Error marking habit complete:', error);
+        res.status(500).send({ message: 'Failed to mark habit complete' });
+      }
+    };
+
+    app.post('/habits/:id/complete', markHabitComplete);
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
