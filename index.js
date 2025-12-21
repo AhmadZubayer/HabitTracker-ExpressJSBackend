@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = "mongodb+srv://habit_tracker:8UzxkckFb29APC4V@cluster0.hxct4cf.mongodb.net/?appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -48,6 +48,16 @@ async function run() {
     };
 
     app.get('/habits/user/:email', getAllHabits);
+
+    // DELETE endpoint to delete a habit by id
+    const deleteHabit = async(req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await habits.deleteOne(query);
+      res.send(result);
+    };
+
+    app.delete('/habits/:id', deleteHabit);
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
