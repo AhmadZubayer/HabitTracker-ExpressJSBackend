@@ -49,6 +49,48 @@ async function run() {
 
     app.get('/habits/user/:email', getAllHabits);
 
+    // GET endpoint to fetch all public habits with filters
+    const browsePublicHabits = async(req, res) => {
+      try {
+        const { search, category, limit } = req.query;
+        
+        // Build query filter
+        let filter = { isPublic: true };
+        
+        // Add category filter
+        if (category) {
+          filter.category = category;
+        }
+        
+        // Query habits
+        let query = habits.find(filter);
+        
+        if (limit) {
+          query = query.limit(parseInt(limit));
+        }
+        
+        let publicHabits = await query
+          .sort({ createdAt: -1 }) // Sort by newest first
+          .toArray();
+        
+        // Client-side search filtering (case-insensitive)
+        if (search) {
+          const searchLower = search.toLowerCase();
+          publicHabits = publicHabits.filter(habit => 
+            habit.title.toLowerCase().includes(searchLower) ||
+            habit.description.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        res.json(publicHabits);
+      } catch (error) {
+        console.error('Error fetching public habits:', error);
+        res.status(500).json({ error: 'Failed to fetch public habits' });
+      }
+    };
+
+    app.get('/habits/public', browsePublicHabits);
+
     // DELETE endpoint to delete a habit by id
     const deleteHabit = async(req, res) => {
       const id = req.params.id;
