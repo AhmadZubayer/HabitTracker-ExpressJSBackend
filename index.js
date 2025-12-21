@@ -6,9 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongodb+srv://habit_tracker:8UzxkckFb29APC4V@cluster0.hxct4cf.mongodb.net/?appName=Cluster0";
 
-
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -19,46 +20,38 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
- 
+    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const database = client.db('habitTracker');
-    const habitsCollection = database.collection('habits');
     
-   
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-
-    // Routes
-    app.get('/', (req, res) => {
-      res.send('Habit Tracker Server is running');
-    });
+    // Setup database and collection
+    const database = client.db('habitTracker');
+    const habits = database.collection('habits');
 
     // POST endpoint to create a new habit
-    app.post('/habits', async (req, res) => {
+    const addHabit = async(req, res) => {
       const data = req.body;
       const date = new Date();
       data.createdAt = date;
       console.log(data);
-      const result = await habitsCollection.insertOne(data);
+      const result = await habits.insertOne(data);
       res.send(result);
-    });
+    };
+    
+    app.post('/habits', addHabit);
 
-    // GET endpoint to fetch all habits for a specific user by email
-    app.get('/habits/user/:email', async (req, res) => {
+    // GET endpoint to fetch habits by user email
+    const getAllHabits = async(req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
-      const result = await habitsCollection.find(query).toArray();
+      const result = await habits.find(query).toArray();
       res.send(result);
-    });
+    };
 
-    // GET endpoint to fetch a single habit by ID
-    app.get('/habits/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await habitsCollection.findOne(query);
-      res.send(result);
-    });
-
+    app.get('/habits/user/:email', getAllHabits);
+    
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -66,6 +59,10 @@ async function run() {
 }
 run().catch(console.dir);
 
+app.get('/', (req,res) => {
+res.send('hello from express');
+});
+
 app.listen(port, ()=> {
-  console.log(`server is running on port ${port}`);
+console.log(`server is running on port ${port}`);
 });
