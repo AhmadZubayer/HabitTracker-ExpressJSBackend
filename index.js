@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const admin = require("firebase-admin");
-const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString("utf8");
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
 const serviceAccount = JSON.parse(decoded);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
@@ -260,12 +261,10 @@ app.get('/', (req,res) => {
 res.send('hello from express');
 });
 
-// For local development
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(port, ()=> {
-    console.log(`server is running on port ${port}`);
-  });
-}
+// Start server (Vercel will handle this differently in production)
+app.listen(port, ()=> {
+  console.log(`server is running on port ${port}`);
+});
 
 // Export for Vercel
 module.exports = app;
