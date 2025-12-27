@@ -4,7 +4,8 @@ require('dotenv').config();
 const port = 3000;
 
 const admin = require("firebase-admin");
-const serviceAccount = require("./habirtracker-mern-firebase-adminsdk.json");
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
@@ -259,6 +260,12 @@ app.get('/', (req,res) => {
 res.send('hello from express');
 });
 
-app.listen(port, ()=> {
-console.log(`server is running on port ${port}`);
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, ()=> {
+    console.log(`server is running on port ${port}`);
+  });
+}
+
+// Export for Vercel
+module.exports = app;
