@@ -1,4 +1,4 @@
-node\_modules
+node_modules
 .env
 .vercel
-.habirtracker-mern-firebase-adminsdk.json
+habirtracker-mern-firebase-adminsdk.json
