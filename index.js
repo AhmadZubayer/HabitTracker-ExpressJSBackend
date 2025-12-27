@@ -6,9 +6,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = "mongodb+srv://habit_tracker:8UzxkckFb29APC4V@cluster0.hxct4cf.mongodb.net/?appName=Cluster0";
 
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hxct4cf.mongodb.net/?appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -49,20 +49,17 @@ async function run() {
 
     app.get('/habits/user/:email', getAllHabits);
 
-    // GET endpoint to fetch all public habits with filters
     const browsePublicHabits = async(req, res) => {
       try {
         const { search, category, limit } = req.query;
-        
-        // Build query filter
+      
         let filter = { isPublic: true };
         
-        // Add category filter
+      
         if (category) {
           filter.category = category;
         }
         
-        // Query habits
         let query = habits.find(filter);
         
         if (limit) {
@@ -70,10 +67,9 @@ async function run() {
         }
         
         let publicHabits = await query
-          .sort({ createdAt: -1 }) // Sort by newest first
+          .sort({ createdAt: -1 })
           .toArray();
         
-        // Client-side search filtering (case-insensitive)
         if (search) {
           const searchLower = search.toLowerCase();
           publicHabits = publicHabits.filter(habit => 
@@ -91,7 +87,7 @@ async function run() {
 
     app.get('/habits/public', browsePublicHabits);
 
-    // DELETE endpoint to delete a habit by id
+    
     const deleteHabit = async(req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -101,7 +97,7 @@ async function run() {
 
     app.delete('/habits/:id', deleteHabit);
 
-    // GET endpoint to fetch a single habit by id
+  
     const habitDetails = async(req, res) => {
       try {
         const id = req.params.id;
@@ -120,7 +116,7 @@ async function run() {
 
     app.get('/habits/:id', habitDetails);
 
-    // PUT endpoint to update a habit by id
+    
     const updateHabitDetails = async(req, res) => {
       const id = req.params.id;
       const data = req.body;
@@ -134,31 +130,24 @@ async function run() {
 
     app.put('/habits/:id', updateHabitDetails);
 
-    // POST endpoint to mark habit as complete
+    
     const markHabitComplete = async(req, res) => {
       try {
         const id = req.params.id;
         const { date } = req.body;
         
-        // Get the current habit
+      
         const habit = await habits.findOne({ _id: new ObjectId(id) });
         
         if (!habit) {
           return res.status(404).send({ message: 'Habit not found' });
         }
-        
-        // Initialize completionHistory if it doesn't exist
         const completionHistory = habit.completionHistory || [];
-        
-        // Check if already completed for this date
         if (completionHistory.includes(date)) {
           return res.status(400).send({ message: 'Already completed for this date' });
         }
-        
-        // Add the new date to completion history
         completionHistory.push(date);
         
-        // Calculate new streak
         const calculateStreak = (completionHistory) => {
           if (!completionHistory || completionHistory.length === 0) return 0;
           
@@ -182,7 +171,6 @@ async function run() {
         
         const newStreak = calculateStreak(completionHistory);
         
-        // Update the habit with new completion history and streak
         const filter = { _id: new ObjectId(id) };
         const updatedDoc = {
           $set: {
