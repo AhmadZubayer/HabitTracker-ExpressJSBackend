@@ -65,18 +65,21 @@ async function run() {
     
     app.post('/habits', verifyFireBaseToken, addHabit);
 
-    // GET endpoint to fetch habits by user email
+    // GET endpoint to fetch habits with optional user email filter
     const getAllHabits = async(req, res) => {
-      const email = req.params.email;
-      if (req.token_email !== email) {
-        return res.status(403).send({ message: 'forbidden access' });
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.userEmail = email;
+        if (email !== req.token_email) {
+          return res.status(403).send({ message: 'forbidden access' });
+        }
       }
-      const query = { userEmail: email };
       const result = await habits.find(query).toArray();
       res.send(result);
     };
 
-    app.get('/habits/user/:email', verifyFireBaseToken, getAllHabits);
+    app.get('/habits', verifyFireBaseToken, getAllHabits);
 
     const browsePublicHabits = async(req, res) => {
       try {
